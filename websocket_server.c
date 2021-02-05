@@ -316,7 +316,7 @@ int ws_server_send_text_all(char* msg,uint64_t len) {
 
 int ws_server_send_bin_all(char* msg,uint64_t len) {
   xSemaphoreTake(xwebsocket_mutex,portMAX_DELAY);
-  int ret = ws_server_send_text_all_from_callback(msg, len);
+  int ret = ws_server_send_bin_all_from_callback(msg, len);
   xSemaphoreGive(xwebsocket_mutex);
   return ret;
 }
