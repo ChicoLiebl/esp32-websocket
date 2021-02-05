@@ -314,6 +314,13 @@ int ws_server_send_text_all(char* msg,uint64_t len) {
   return ret;
 }
 
+int ws_server_send_bin_all(char* msg,uint64_t len) {
+  xSemaphoreTake(xwebsocket_mutex,portMAX_DELAY);
+  int ret = ws_server_send_text_all_from_callback(msg, len);
+  xSemaphoreGive(xwebsocket_mutex);
+  return ret;
+}
+
 // the following functions should be used inside of the callback. The regular versions
 // grab the mutex, but it is already grabbed from inside the callback so it will hang.
 
@@ -359,6 +366,22 @@ int ws_server_send_text_all_from_callback(char* msg,uint64_t len) {
   for(int i=0;i<WEBSOCKET_SERVER_MAX_CLIENTS;i++) {
     if(ws_is_connected(clients[i])) {
       err = ws_send(&clients[i],WEBSOCKET_OPCODE_TEXT,msg,len,0);
+      if(!err) ret += 1;
+      else {
+        clients[i].scallback(i,WEBSOCKET_DISCONNECT_ERROR,NULL,0);
+        ws_disconnect_client(&clients[i], 0);
+      }
+    }
+  }
+  return ret;
+}
+
+int ws_server_send_bin_all_from_callback(char* msg,uint64_t len) {
+  int ret = 0;
+  int err;
+  for(int i=0;i<WEBSOCKET_SERVER_MAX_CLIENTS;i++) {
+    if(ws_is_connected(clients[i])) {
+      err = ws_send(&clients[i],WEBSOCKET_OPCODE_BIN,msg,len,0);
       if(!err) ret += 1;
       else {
         clients[i].scallback(i,WEBSOCKET_DISCONNECT_ERROR,NULL,0);
